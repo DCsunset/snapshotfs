@@ -1,6 +1,6 @@
-mod singlefs;
+mod snapshotfs;
 
-use singlefs::SingleFS;
+use snapshotfs::SnapshotFS;
 use clap::Parser;
 use fuser::{self, MountOption};
 
@@ -16,7 +16,7 @@ fn main() {
 	let args = Args::parse();
 	let options = vec![MountOption::RO, MountOption::FSName("singlefs".to_string())];
 	fuser::mount2(
-		SingleFS::new(args.source_dir),
+		SnapshotFS::new(args.source_dir),
 		args.mount_point,
 		&options
 	).unwrap();

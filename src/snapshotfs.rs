@@ -14,7 +14,7 @@ use std::{
 use log::{warn, error, debug};
 use libc::{EIO, ENOENT};
 
-pub struct SingleFS {
+pub struct SnapshotFS {
 	/// Source dir
 	source_dir: String,
 	/// map inode to actually filename
@@ -22,7 +22,7 @@ pub struct SingleFS {
 	inode_map: HashMap<u64, OsString>
 }
 
-impl SingleFS {
+impl SnapshotFS {
 	pub fn new(source_dir: String) -> Self {
 		Self {
 			source_dir: source_dir,
@@ -92,7 +92,7 @@ fn unix_time(secs: i64) -> SystemTime {
 	UNIX_EPOCH + Duration::from_secs(secs as u64)
 }
 
-impl Filesystem for SingleFS {
+impl Filesystem for SnapshotFS {
 	fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: fuser::ReplyEntry) {
 		if parent == ROOT_INODE {
 			if let Ok(mut entries) = self.read_source_dir() {
