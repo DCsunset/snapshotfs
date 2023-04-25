@@ -5,13 +5,13 @@ use fuser::{
 	ReplyDirectory, FileAttr
 };
 use std::{
-	fs::{self, DirEntry}, os::{unix::prelude::DirEntryExt, linux::fs::MetadataExt},
-	time::{UNIX_EPOCH, Duration, SystemTime}, ffi::{OsString, OsStr}, io,
+	fs::{self, DirEntry}, os::{unix::prelude::{DirEntryExt, MetadataExt}},
+	time::{Duration, SystemTime}, ffi::{OsString, OsStr}, io,
 	collections::HashMap,
 	path::Path,
 	string::String
 };
-use log::{warn, error, debug};
+use log::{warn, error};
 use libc::{EIO, ENOENT};
 
 pub struct SnapshotFS {
@@ -66,31 +66,28 @@ fn derive_ino(ino: u64) -> u64 {
 }
 
 fn derive_attr(metadata: fs::Metadata, root: bool) -> FileAttr {
+	let cur_time = SystemTime::now();
 	FileAttr {
-		ino: if root { ROOT_INODE } else { derive_ino(metadata.st_ino()) },
-		size: metadata.st_size(),
-		blocks: metadata.st_blocks(),
+		ino: if root { ROOT_INODE } else { derive_ino(metadata.ino()) },
+		size: metadata.size(),
+		blocks: metadata.blocks(),
 		// Convert unix timestamp to SystemTime
-		atime: unix_time(metadata.st_atime()),
-		mtime: unix_time(metadata.st_mtime()),
-		ctime: unix_time(metadata.st_ctime()),
-		crtime: UNIX_EPOCH, // macOS only
+		atime: cur_time,
+		mtime: metadata.modified().unwrap_or(cur_time),
+		ctime: cur_time,
+		crtime: cur_time, // macOS only
 		kind: if root { FileType::Directory } else { FileType::RegularFile },
-		perm: metadata.st_mode() as u16,
-		nlink: metadata.st_nlink() as u32,
-		uid: metadata.st_uid(),
-		gid: metadata.st_gid(),
-		rdev: metadata.st_rdev() as u32,
-		blksize:  metadata.st_blksize() as u32,
+		perm: metadata.mode() as u16,
+		nlink: 0,
+		uid: metadata.uid(),
+		gid: metadata.gid(),
+		rdev: metadata.rdev() as u32,
+		blksize:  metadata.blksize() as u32,
 		flags: 0 // macOS only
 	}		
 }
 
 const TTL: Duration = Duration::from_secs(1);
-
-fn unix_time(secs: i64) -> SystemTime {
-	UNIX_EPOCH + Duration::from_secs(secs as u64)
-}
 
 impl Filesystem for SnapshotFS {
 	fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: fuser::ReplyEntry) {
