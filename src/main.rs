@@ -1,6 +1,9 @@
-mod snapshotfs;
+mod snapshot_fs;
+mod utils;
+mod metadata;
+mod block_io;
 
-use snapshotfs::SnapshotFS;
+use snapshot_fs::SnapshotFS;
 use clap::Parser;
 use fuser::{self, MountOption};
 

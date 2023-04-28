@@ -1,5 +1,5 @@
 [package]
-name = "fuse-single"
+name = "snapshotfs"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,4 +11,6 @@ fuser = "0.12"
 libc = "0.2"
 log = "0.4"
 env_logger = "0.9"
+tar = "0.4"
+walkdir = "2"
 
