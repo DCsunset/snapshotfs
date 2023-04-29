@@ -116,6 +116,7 @@ pub fn load_blocks(source_dir: impl AsRef<Path>, path: impl AsRef<Path>) -> io::
 		let m = fs::metadata(e.path())?;
 		let mut h = tar::Header::new_gnu();
 		h.set_metadata(&m);
+		// Strip source_dir to avoid including the full path
 		h.set_path(e.path().strip_prefix(&source_dir).unwrap())?;
 		h.set_cksum();
 

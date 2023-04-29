@@ -208,15 +208,8 @@ impl Filesystem for SnapshotFS {
 		assert!(offset >= 0);
 		match self.inode_map.get(&ino) {
 			Some(info) => {
-				// Headers should be available already
-				if info.blocks.is_none() {
-					error!("files not available: {:?}", info.path);
-					reply.error(EIO);
-					return;
-				}
-				
 				// Use block abstraction to simplify iteration
-				match read_from_blocks(info.blocks.as_ref().unwrap(), offset as u64, size as usize) {
+				match read_from_blocks(&info.blocks, offset as u64, size as usize) {
 					Ok(data) => {
 						reply.data(&data);
 					},

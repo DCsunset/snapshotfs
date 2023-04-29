@@ -10,7 +10,7 @@ pub struct InodeInfo {
 	pub path: OsString,
 	/// Blocks for reading and fast seeking in tar file
 	/// Each file has a header block and a content block
-	pub blocks: Option<Vec<Block>>,
+	pub blocks: Vec<Block>,
 	pub attr: FileAttr
 }
 
@@ -31,19 +31,13 @@ impl InodeInfo {
 		Ok(())
 	}
 
-	fn get_metadata(source_dir: impl AsRef<Path>, path: impl AsRef<Path>) -> io::Result<(Option<Vec<Block>>, FileAttr)> {
+	fn get_metadata(source_dir: impl AsRef<Path>, path: impl AsRef<Path>) -> io::Result<(Vec<Block>, FileAttr)> {
 		let src_metadata = fs::metadata(&path)?;
 		let mut attr = derive_attr(&src_metadata,	false);
-		let blocks = if src_metadata.is_dir() {
-			// calculate size and blocks
-			let b = load_blocks(source_dir, &path)?;
-			attr.size = size_of_blocks(&b) as u64;
-			attr.blocks = (attr.size + attr.blksize as u64 - 1) / attr.blksize as u64;
-			Some(b)
-		} else {
-			// passthrough for regular files
-			None
-		};
+		// calculate size and blocks
+		let blocks = load_blocks(source_dir, &path)?;
+		attr.size = size_of_blocks(&blocks) as u64;
+		attr.blocks = (attr.size + attr.blksize as u64 - 1) / attr.blksize as u64;
 		Ok((blocks, attr))
 	}
 }
