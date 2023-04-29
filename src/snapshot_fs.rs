@@ -10,7 +10,7 @@ use std::{
 	collections::HashMap,
 	path::Path
 };
-use log::{error, debug, warn};
+use log::{error, warn};
 use libc::{EIO, ENOENT};
 use crate::{metadata::{InodeInfo, derive_attr, ROOT_INODE}, block_io::read_from_blocks};
 use crate::utils;
