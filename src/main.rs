@@ -19,6 +19,7 @@ struct Args {
 fn main() {
 	env_logger::init();
 	let args = Args::parse();
+	// TODO: add metadata for fs (size, remaining space, etc.)
 	let options = vec![MountOption::RO, MountOption::FSName("singlefs".to_string())];
 	fuser::mount2(
 		SnapshotFS::new(args.source_dir),

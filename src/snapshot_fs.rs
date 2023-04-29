@@ -47,7 +47,6 @@ impl SnapshotFS {
 				match InodeInfo::new(&self.source_dir, path) {
 					Ok(info) => {
 						let ino = info.attr.ino;
-						debug!("adding file {:?}: ino {}", name, ino);
 						self.file_map.insert(name.to_os_string(), ino);
 						self.inode_map.insert(ino, info);
 						Ok(self.inode_map.get(&ino).unwrap())
@@ -66,7 +65,16 @@ impl SnapshotFS {
 impl Filesystem for SnapshotFS {
 	fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: fuser::ReplyEntry) {
 		if parent == ROOT_INODE {
-			match self.file_map.get(name) {
+			// Remove the tar extension
+			let name_stem = match Path::new(&name).file_stem() {
+				Some(n) => n,
+				None => {
+					reply.error(ENOENT);
+					return;
+				}
+			};
+			
+			match self.file_map.get(name_stem) {
 				Some(ino) => {
 					let info = self.inode_map.get_mut(ino).unwrap();
 					match info.update_info(&self.source_dir) {
@@ -85,8 +93,8 @@ impl Filesystem for SnapshotFS {
 					};
 				},
 				None => {
-					if utils::read_dir(&self.source_dir, 1, 1).find(|e| e.file_name() == name).is_some() {
-						match self.add_file(name) {
+					if utils::read_dir(&self.source_dir, 1, 1).find(|e| e.file_name() == name_stem).is_some() {
+						match self.add_file(name_stem) {
 							Ok(info) => {
 								reply.entry(&TTL, &info.attr, 0);
 								return;		
@@ -152,12 +160,16 @@ impl Filesystem for SnapshotFS {
 			(ROOT_INODE, FileType::Directory, OsString::from("..")),
 		];
 		entries.extend(utils::read_dir(&self.source_dir.clone(), 1, 1).filter_map(|e| {
+			let mut name = e.file_name().to_os_string();
+			name.push(".tar");  // append tar extension
+			
+			// only store the original name in inode_map
 			match self.add_file(e.file_name()) {
 				Ok(info) => {
 					Some((
 						info.attr.ino,
 						FileType::RegularFile,
-						e.file_name().to_os_string()
+						name
 					))
 				},
 				Err(_) => None
