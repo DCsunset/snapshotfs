@@ -3,6 +3,8 @@ mod utils;
 mod metadata;
 mod block_io;
 
+use std::ffi::OsString;
+
 use snapshot_fs::SnapshotFS;
 use clap::Parser;
 use fuser::{self, MountOption};
@@ -10,7 +12,7 @@ use fuser::{self, MountOption};
 #[derive(Parser)]
 #[command(version)]
 struct Args {
-	source_dir: String,
+	source_dir: OsString,
 	mount_point: String
 }
 

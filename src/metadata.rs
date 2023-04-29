@@ -15,8 +15,8 @@ pub struct InodeInfo {
 }
 
 impl InodeInfo {
-	pub fn new(path: OsString) -> io::Result<Self> {
-		let (blocks, attr) = InodeInfo::get_metadata(&path)?;
+	pub fn new(source_dir: impl AsRef<Path>, path: OsString) -> io::Result<Self> {
+		let (blocks, attr) = InodeInfo::get_metadata(source_dir, &path)?;
 		Ok(Self {
 			path: path,
 			blocks: blocks,
@@ -24,19 +24,19 @@ impl InodeInfo {
 		})
 	}
 
-	pub fn update_info(&mut self) -> io::Result<()> {
-		let (blocks, attr) = InodeInfo::get_metadata(&self.path)?;
+	pub fn update_info(&mut self, source_dir: impl AsRef<Path>) -> io::Result<()> {
+		let (blocks, attr) = InodeInfo::get_metadata(source_dir, &self.path)?;
 		self.attr = attr;
 		self.blocks = blocks;
 		Ok(())
 	}
 
-	fn get_metadata(path: impl AsRef<Path>) -> io::Result<(Option<Vec<Block>>, FileAttr)> {
+	fn get_metadata(source_dir: impl AsRef<Path>, path: impl AsRef<Path>) -> io::Result<(Option<Vec<Block>>, FileAttr)> {
 		let src_metadata = fs::metadata(&path)?;
 		let mut attr = derive_attr(&src_metadata,	false);
 		let blocks = if src_metadata.is_dir() {
 			// calculate size and blocks
-			let b = load_blocks(&path)?;
+			let b = load_blocks(source_dir, &path)?;
 			attr.size = size_of_blocks(&b) as u64;
 			attr.blocks = (attr.size + attr.blksize as u64 - 1) / attr.blksize as u64;
 			Some(b)

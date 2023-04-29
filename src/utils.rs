@@ -3,10 +3,10 @@ use log::{warn};
 
 use walkdir::{WalkDir, DirEntry};
 
-pub fn read_dir(dir: impl AsRef<Path>, max_depth: usize) -> impl Iterator<Item = DirEntry> {
+pub fn read_dir(dir: impl AsRef<Path>, min_depth: usize, max_depth: usize) -> impl Iterator<Item = DirEntry> {
 	// Ignore files that can't be read
 	WalkDir::new(dir)
-		.min_depth(1)  // skip current dir
+		.min_depth(min_depth)  // skip current dir
 		.max_depth(max_depth)
 		.into_iter()
 		.filter_map(|res| {

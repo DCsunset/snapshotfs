@@ -8,8 +8,7 @@ use std::{
 	fs,
 	time::Duration, ffi::{OsString, OsStr}, io,
 	collections::HashMap,
-	path::Path,
-	string::String
+	path::Path
 };
 use log::{error, debug, warn};
 use libc::{EIO, ENOENT};
@@ -22,7 +21,7 @@ const TTL: Duration = Duration::from_secs(1);
 
 pub struct SnapshotFS {
 	/// Source dir
-	source_dir: String,
+	source_dir: OsString,
 	/// map inode to actually filename
 	// TODO: garbage collect too old items
 	inode_map: HashMap<u64, InodeInfo>,
@@ -31,7 +30,7 @@ pub struct SnapshotFS {
 }
 
 impl SnapshotFS {
-	pub fn new(source_dir: String) -> Self {
+	pub fn new(source_dir: OsString) -> Self {
 		Self {
 			source_dir: source_dir,
 			inode_map: HashMap::new(),
@@ -45,7 +44,7 @@ impl SnapshotFS {
 			Some(ino) => Ok(self.inode_map.get(ino).unwrap()),
 			None => {
 				let path = Path::new(&self.source_dir).join(name).as_os_str().to_os_string();
-				match InodeInfo::new(path) {
+				match InodeInfo::new(&self.source_dir, path) {
 					Ok(info) => {
 						let ino = info.attr.ino;
 						debug!("adding file {:?}: ino {}", name, ino);
@@ -70,7 +69,7 @@ impl Filesystem for SnapshotFS {
 			match self.file_map.get(name) {
 				Some(ino) => {
 					let info = self.inode_map.get_mut(ino).unwrap();
-					match info.update_info() {
+					match info.update_info(&self.source_dir) {
 						Ok(_) => {
 							reply.entry(&TTL, &info.attr, 0);
 							return;
@@ -86,7 +85,7 @@ impl Filesystem for SnapshotFS {
 					};
 				},
 				None => {
-					if utils::read_dir(&self.source_dir, 1).find(|e| e.file_name() == name).is_some() {
+					if utils::read_dir(&self.source_dir, 1, 1).find(|e| e.file_name() == name).is_some() {
 						match self.add_file(name) {
 							Ok(info) => {
 								reply.entry(&TTL, &info.attr, 0);
@@ -119,7 +118,7 @@ impl Filesystem for SnapshotFS {
 			}
 		} else {
 			if let Some(info) = self.inode_map.get_mut(&ino) {
-				match info.update_info() {
+				match info.update_info(&self.source_dir) {
 					Ok(_) => {
 						reply.attr(&TTL, &info.attr);
 						return;
@@ -152,7 +151,7 @@ impl Filesystem for SnapshotFS {
 			(ROOT_INODE, FileType::Directory, OsString::from(".")),
 			(ROOT_INODE, FileType::Directory, OsString::from("..")),
 		];
-		entries.extend(utils::read_dir(&self.source_dir.clone(), 1).filter_map(|e| {
+		entries.extend(utils::read_dir(&self.source_dir.clone(), 1, 1).filter_map(|e| {
 			match self.add_file(e.file_name()) {
 				Ok(info) => {
 					Some((
@@ -179,7 +178,7 @@ impl Filesystem for SnapshotFS {
 	fn open(&mut self, _req: &Request, ino: u64, _flags: i32, reply: fuser::ReplyOpen) {
 		match self.inode_map.get_mut(&ino) {
 			Some(info) => {
-				match info.update_info() {
+				match info.update_info(&self.source_dir) {
 					Ok(_) => reply.opened(0, 0),
 					Err(err) => {
 						warn!("error opening file {:?}: {}", info.path, err);

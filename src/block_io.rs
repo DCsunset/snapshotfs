@@ -108,15 +108,15 @@ pub fn read_from_blocks(blocks: &Vec<Block>, offset: u64, size: usize) -> io::Re
 
 
 // read from corresponding source dir to compute the blocks
-pub fn load_blocks(path: impl AsRef<Path>) -> io::Result<Vec<Block>> {
+pub fn load_blocks(source_dir: impl AsRef<Path>, path: impl AsRef<Path>) -> io::Result<Vec<Block>> {
 	let mut blocks: Vec<Block> = Vec::new();
 	// current offset from beginning of the tar file
 	let mut offset = 0;
-	for e in utils::read_dir(path, usize::MAX) {
+	for e in utils::read_dir(path, 0, usize::MAX) {
 		let m = fs::metadata(e.path())?;
 		let mut h = tar::Header::new_gnu();
 		h.set_metadata(&m);
-		h.set_path(e.path())?;
+		h.set_path(e.path().strip_prefix(&source_dir).unwrap())?;
 		h.set_cksum();
 
 		// header block
@@ -126,28 +126,30 @@ pub fn load_blocks(path: impl AsRef<Path>) -> io::Result<Vec<Block>> {
 		});
 		offset += 512;  // header size
 
-		// file content block
-		let size = m.size();
-		blocks.push(Block {
-			reader: Box::new(FileReader {
-				path: e.path().as_os_str().to_os_string(),
-				size: size as usize
-			}),
-			offset: offset
-		});
-		offset += size;
+		// file content block (for directory or symlink, no content is added)
+		if m.is_file() {
+			let size = m.size();
+			blocks.push(Block {
+				reader: Box::new(FileReader {
+					path: e.path().as_os_str().to_os_string(),
+					size: size as usize
+				}),
+				offset: offset
+			});
+			offset += size;
 
-		if size % 512 != 0 {
-			// Add padding to make offset a multiple of 512 bytes
-			let padding = 512 - size % 512;
-			if padding > 0 {
-				blocks.push(Block {
-					reader: Box::new(PaddingReader {
-						size: padding as usize
-					}),
-					offset: offset
-				});
-				offset += padding;
+			if size % 512 != 0 {
+				// Add padding to make offset a multiple of 512 bytes
+				let padding = 512 - size % 512;
+				if padding > 0 {
+					blocks.push(Block {
+						reader: Box::new(PaddingReader {
+							size: padding as usize
+						}),
+						offset: offset
+					});
+					offset += padding;
+				}
 			}
 		}
 	}
