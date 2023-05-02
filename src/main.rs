@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2023 DCsunset
+ * See full notice in README.md in this project
+ */
+
 mod snapshot_fs;
 mod utils;
 mod metadata;

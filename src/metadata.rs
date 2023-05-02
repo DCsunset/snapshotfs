@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2023 DCsunset
+ * See full notice in README.md in this project
+ */
+
 use std::{ffi::OsString, time::SystemTime, fs, os::unix::prelude::MetadataExt, path::Path, io};
 
 use fuser::{FileAttr, FileType};

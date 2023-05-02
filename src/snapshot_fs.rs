@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2023 DCsunset
+ * See full notice in README.md in this project
+ */
+
 use fuser::{
 	Filesystem,
 	FileType,
