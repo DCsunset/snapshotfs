@@ -3,7 +3,7 @@ mod utils;
 mod metadata;
 mod block_io;
 
-use std::ffi::OsString;
+use std::{path::PathBuf, fs};
 
 use snapshot_fs::SnapshotFS;
 use clap::Parser;
@@ -13,9 +13,9 @@ use fuser::{self, MountOption};
 #[command(version)]
 struct Args {
 	/// The source directory to make snapshot
-	source_dir: OsString,
+	source_dir: PathBuf,
 	/// Mount point to mount snapshotfs
-	mount_point: OsString,
+	mount_point: PathBuf,
 
 	/// Allow other users to access the mounted fs
 	#[arg(long)]
@@ -29,10 +29,12 @@ struct Args {
 fn main() {
 	env_logger::init();
 	let args = Args::parse();
-	// TODO: add metadata for fs (size, remaining space, etc.)
+	// Convert to absolute path
+	let source_dir = fs::canonicalize(&args.source_dir).unwrap();
 	let mut options = vec![
 		MountOption::RO,
-		MountOption::FSName("snapshotfs".to_string())
+		MountOption::FSName(source_dir.to_string_lossy().to_string()),
+		MountOption::Subtype("snapshotfs".to_string())
 	];
 	if args.allow_other {
 		options.push(MountOption::AllowOther);
@@ -43,7 +45,7 @@ fn main() {
 
 	// TODO: support background mount
 	fuser::mount2(
-		SnapshotFS::new(args.source_dir),
+		SnapshotFS::new(source_dir),
 		args.mount_point,
 		&options
 	).unwrap();

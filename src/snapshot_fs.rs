@@ -6,9 +6,9 @@ use fuser::{
 };
 use std::{
 	fs,
-	time::Duration, ffi::{OsString, OsStr}, io,
+	time::Duration, ffi::{OsString, OsStr, CString}, io,
 	collections::HashMap,
-	path::Path
+	path::{Path, PathBuf}, os::unix::prelude::OsStrExt
 };
 use log::{error, warn};
 use libc::{EIO, ENOENT};
@@ -21,7 +21,7 @@ const TTL: Duration = Duration::from_secs(1);
 
 pub struct SnapshotFS {
 	/// Source dir
-	source_dir: OsString,
+	source_dir: PathBuf,
 	/// map inode to actually filename
 	// TODO: garbage collect too old items
 	inode_map: HashMap<u64, InodeInfo>,
@@ -30,7 +30,7 @@ pub struct SnapshotFS {
 }
 
 impl SnapshotFS {
-	pub fn new(source_dir: OsString) -> Self {
+	pub fn new(source_dir: PathBuf) -> Self {
 		Self {
 			source_dir: source_dir,
 			inode_map: HashMap::new(),
@@ -233,5 +233,20 @@ impl Filesystem for SnapshotFS {
 			},
 			None => reply.error(ENOENT)
 		};
+	}
+
+	fn statfs(&mut self, _req: &Request<'_>, _ino: u64, reply: fuser::ReplyStatfs) {
+		unsafe {
+			let mut buf: libc::statfs = std::mem::zeroed();
+			// convert to c-style string without encoding/decoding
+			let path = CString::new(self.source_dir.as_os_str().as_bytes()).unwrap();
+			let ret = libc::statfs(path.as_ptr(), &mut buf);
+			if ret != 0{
+				reply.error(ret);
+			}
+			else {
+				reply.statfs(buf.f_blocks, buf.f_bfree, buf.f_bavail, buf.f_files, buf.f_ffree, buf.f_bsize as u32, buf.f_namelen as u32, buf.f_frsize as u32);
+			}
+		}
 	}
 }
