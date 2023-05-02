@@ -2,6 +2,13 @@
 name = "snapshotfs"
 version = "0.1.0"
 edition = "2021"
+authors = ["DCsunset"]
+description = "A fuse-based read-only filesystem to provide a snapshot view (tar archives) of directories or files without actually creating the archives"
+readme = "README.md"
+repository = "https://github.com/DCsunset/snapshotfs"
+license = "AGPL-3.0"
+keywords = ["fs", "fuse", "snapshot", "tar", "archive"]
+categories = ["filesystem", "command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
