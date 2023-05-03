@@ -1,0 +1,67 @@
+name: Build and publish package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+  
+env:
+  # set preview mode if not triggered by tags
+  preview: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-gnu
+            
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install cross
+        run: |
+          cargo install cross --git https://github.com/cross-rs/cross.git
+          echo "CARGO=cross" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          ${{ env.CARGO }} build --release --locked --target ${{ matrix.target }}
+          cp "target/${{ matrix.target }}/release/snapshotfs"
+           
+      - uses: actions/upload-artifact@v3
+        with:
+          name: snapshotfs-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/snapshotfs
+
+  publish:
+    name: Publish
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+
+      - name: List artifacts
+        run: ls snapshotfs-*
+
+      - name: Cargo release
+        if: env.preview == 'false'
+        run: cargo publish --token ${{ secrets.CARGO_TOKEN }}
+
+      - name: GitHub release
+        if: env.preview == 'false'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: snapshotfs-*
+          file_glob: true
+          tag: ${{ github.ref }}
+          overwrite: true
+
