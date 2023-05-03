@@ -1,10 +1,41 @@
 # snapshotfs
 
-A fuse-based read-only file system to access the snapshots (tar archives) of directories or files without actually creating the archives
+A fuse-based read-only filesystem to provide a snapshot view (tar archives) of directories or files without actually creating the archives
 
-# License
+Snapshotfs is useful for backup or file transfer without creating duplicate archives.
+Currently, only Linux system is supported (it might work in macOS but it's not tested).
 
-AGPL-3.0. Copyright notice
+## Installation
+
+Pre-built binaries are available at the GitHub release page.
+
+You can also use cargo to install it:
+
+```sh
+cargo install snapshotfs
+```
+
+## Usage
+
+To mount source dir to a mount point:
+
+```sh
+snapshotfs <SOURCE_DIR> <MOUNT_POINT>
+```
+
+The mount point will be a read-only filesystem providing a snapshot view of all entries in the the source directory.
+Users should make sure the source directory doesn't change when reading the archives in snapshotfs.
+Otherwise, the archives might be corrupted.
+
+Note that the program will run in the foreground.
+Add `&` to the end to make it run in the background.
+
+See available options using `snapshotfs --help`.
+
+
+## License
+
+AGPL-3.0. Copyright notice:
 
 ```
 snapshotfs
