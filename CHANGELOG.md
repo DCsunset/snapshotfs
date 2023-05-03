@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.1.1](https://github.com/DCsunset/snapshot-fuse/compare/v0.1.0...v0.1.1) (2023-05-03)
+
+
+### Bug Fixes
+
+* auto unmount when program terminates ([c5e4955](https://github.com/DCsunset/snapshot-fuse/commit/c5e4955095d326986b927ed2b136d5ff5bb7fa18))
+
 ## 0.1.0 (2023-05-03)
 
 
