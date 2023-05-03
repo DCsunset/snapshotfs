@@ -16,11 +16,11 @@ on:
         type: boolean
         required: true
         default: false
-      github_release_name:
-        description: Name for GitHub release
+      github_release_tag:
+        description: Tag for GitHub release
         type: string
         required: true
-        default: latest
+        default: main
   
 env:
   # set preview mode if not triggered by tags
@@ -91,7 +91,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
           file_glob: true
-          release_name: ${{ inputs.github_release_name }}
+          tag: ${{ inputs.github_release_tag }}
           overwrite: true
 
 
