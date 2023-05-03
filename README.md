@@ -32,6 +32,9 @@ Otherwise, the archives might be corrupted.
 Note that the program will run in the foreground.
 Add `&` to the end to make it run in the background.
 
+The filesystem should be unmounted upon termination of the program.
+You can also unmount it by command `fusermount -u <MOUNT_POINT`, which will make the main program exit normally.
+
 See available options using `snapshotfs --help`.
 
 
