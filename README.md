@@ -3,7 +3,7 @@
 A fuse-based read-only filesystem to provide a snapshot view (tar archives) of directories or files without actually creating the archives
 
 Snapshotfs is useful for backup or file transfer without creating duplicate archives.
-Currently, only Linux system is supported (it might work in macOS but it's not tested).
+Currently, only Linux system is supported.
 
 ## Installation
 

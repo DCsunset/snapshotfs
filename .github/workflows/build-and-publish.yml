@@ -28,10 +28,6 @@ jobs:
         run: |
           cargo install cross --git https://github.com/cross-rs/cross.git
           echo "CARGO=cross" >> $GITHUB_ENV
-      
-      - name: Install dependencies
-        run: |
-          sudo apt install -y libfuse3-dev
 
       - name: Build
         run: |
