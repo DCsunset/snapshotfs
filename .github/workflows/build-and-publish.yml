@@ -32,7 +32,6 @@ jobs:
       - name: Build
         run: |
           ${{ env.CARGO }} build --release --locked --target ${{ matrix.target }}
-          cp "target/${{ matrix.target }}/release/snapshotfs"
            
       - uses: actions/upload-artifact@v3
         with:
