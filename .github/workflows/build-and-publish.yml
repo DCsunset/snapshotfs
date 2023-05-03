@@ -6,15 +6,25 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      release:
-        description: Release package
+      cargo_release:
+        description: Release Cargo package
         type: boolean
         required: true
         default: false
+      github_release:
+        description: Release GitHub package
+        type: boolean
+        required: true
+        default: false
+      github_release_name:
+        description: Name for GitHub release
+        type: string
+        required: true
+        default: latest
   
 env:
   # set preview mode if not triggered by tags
-  release: ${{ startsWith(github.ref, 'refs/tags/') || inputs.release }}
+  tag_release: ${{ startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   build:
@@ -63,16 +73,26 @@ jobs:
           ls dist
 
       - name: Cargo release
-        if: env.release == 'true'
+        if: env.tag_release == 'true' || inputs.cargo_release
         run: cargo publish --token ${{ secrets.CARGO_TOKEN }}
 
-      - name: GitHub release
-        if: env.release == 'true'
+      - name: GitHub release from tag
+        if: env.tag_release == 'true'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
           file_glob: true
-          tag: ${{ github.ref }}
           overwrite: true
+
+      - name: GitHub release manually
+        if: env.tag_release == 'false' && inputs.github_release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*
+          file_glob: true
+          release_name: ${{ inputs.github_release_name }}
+          overwrite: true
+
 
