@@ -39,7 +39,8 @@ fn main() {
 	let mut options = vec![
 		MountOption::RO,
 		MountOption::FSName(source_dir.to_string_lossy().to_string()),
-		MountOption::Subtype("snapshotfs".to_string())
+		MountOption::Subtype("snapshotfs".to_string()),
+		MountOption::AutoUnmount
 	];
 	if args.allow_other {
 		options.push(MountOption::AllowOther);
