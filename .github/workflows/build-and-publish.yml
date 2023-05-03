@@ -52,6 +52,7 @@ jobs:
           mkdir dist
           for name in snapshotfs-*; do
             mv $name/snapshotfs dist/$name
+            rmdir $name
           done
           ls dist
 
