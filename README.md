@@ -2,7 +2,8 @@
 
 [![crates.io](https://badgen.net/crates/v/snapshotfs)](https://crates.io/crates/snapshotfs)
 
-A fuse-based read-only filesystem to provide a snapshot view (tar archives) of directories or files without actually creating the archives
+A fuse-based read-only filesystem to provide a snapshot view (tar archives) of directories or files without actually creating the archives.
+It uses tar POSIX.1-2001/pax format to handle long file paths.
 
 Snapshotfs is useful for backup or file transfer without creating duplicate archives,
 which supports efficient random access to the tar files.
@@ -33,8 +34,9 @@ Otherwise, the archives might be corrupted.
 Note that the program will run in the foreground.
 Add `&` to the end to make it run in the background.
 
-The filesystem should be unmounted upon termination of the program.
-You can also unmount it by command `fusermount -u <MOUNT_POINT`, which will make the main program exit normally.
+The filesystem should be unmounted by command `fusermount -u <MOUNT_POINT`,
+even if the program already exits.
+You can also use `-a` option to auto unmount the fs upon exit.
 
 See available options using `snapshotfs --help`.
 

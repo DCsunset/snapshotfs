@@ -29,7 +29,12 @@ struct Args {
 
 	/// Allow root user to access the mounted fs
 	#[arg(long)]
-	allow_root: bool
+	allow_root: bool,
+
+	/// Unmount automatically when program exists.
+	/// (need --allow-root or --allow-other; auto set one if not specified)
+	#[arg(short, long)]
+	auto_unmount: bool
 }
 
 fn main() {
@@ -41,14 +46,15 @@ fn main() {
 		MountOption::RO,
 		MountOption::FSName(source_dir.to_string_lossy().to_string()),
 		MountOption::Subtype("snapshotfs".to_string()),
-		// TODO: add option for auto unmount
-		MountOption::AutoUnmount
 	];
 	if args.allow_other {
 		options.push(MountOption::AllowOther);
 	}
 	if args.allow_root {
 		options.push(MountOption::AllowRoot);
+	}
+	if args.auto_unmount {
+		options.push(MountOption::AutoUnmount);
 	}
 
 	// TODO: support background mount
