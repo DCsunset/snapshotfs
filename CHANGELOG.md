@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.2.0](https://github.com/DCsunset/snapshot-fuse/compare/v0.1.1...v0.2.0) (2023-05-04)
+
+
+### Features
+
+* support pax format for long file names ([2381ac0](https://github.com/DCsunset/snapshot-fuse/commit/2381ac093270033d9e23f580102bd3e39a01e75f))
+
+
+### Bug Fixes
+
+* add option to enable auto unmount ([4c09949](https://github.com/DCsunset/snapshot-fuse/commit/4c09949fb6bf26ddebd70b2adf66e450f212b792))
+
 ## [0.1.1](https://github.com/DCsunset/snapshot-fuse/compare/v0.1.0...v0.1.1) (2023-05-03)
 
 
