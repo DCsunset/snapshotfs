@@ -7,6 +7,7 @@ mod snapshot_fs;
 mod utils;
 mod metadata;
 mod block_io;
+mod pax;
 
 use std::{path::PathBuf, fs};
 
@@ -40,6 +41,7 @@ fn main() {
 		MountOption::RO,
 		MountOption::FSName(source_dir.to_string_lossy().to_string()),
 		MountOption::Subtype("snapshotfs".to_string()),
+		// TODO: add option for auto unmount
 		MountOption::AutoUnmount
 	];
 	if args.allow_other {

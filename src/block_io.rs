@@ -4,8 +4,9 @@
  */
 
 use std::{os::unix::prelude::{FileExt, MetadataExt}, fs::{File, self}, ffi::OsString, io, path::Path};
-use crate::utils;
+use crate::{utils, pax::PaxHeader};
 
+/// Generalized reader to read bytes from a virtual block
 pub trait Reader {
 	fn read_at(&self, buf: &mut [u8], offset: u64) -> io::Result<usize>;
 	// total size available
@@ -24,21 +25,6 @@ impl Reader for FileReader {
 
 	fn size(&self) -> usize { self.size }
 }
-pub struct HeaderReader {
-	pub header: tar::Header
-}
-
-impl Reader for HeaderReader {
-	fn read_at(&self, buf: &mut [u8], offset: u64) -> io::Result<usize> {
-		let size = buf.len();
-		let off = offset as usize;
-		buf.copy_from_slice(&self.header.as_bytes()[off..off+size]);
-		Ok(size)
-	}
-
-	// header size is always 512
-	fn size(&self) -> usize { 512 }
-}
 
 /// Padding to make size of file content a multple of 512 bytes
 pub struct PaddingReader {
@@ -53,6 +39,7 @@ impl Reader for PaddingReader {
 
 	fn size(&self) -> usize { self.size }
 }
+
 
 /// Data blocks in tar (header or file content)
 pub struct Block {
@@ -111,6 +98,22 @@ pub fn read_from_blocks(blocks: &Vec<Block>, offset: u64, size: usize) -> io::Re
 	Ok(data)
 }
 
+/// Pad the offset to a multiple of 512 bytes
+fn create_padding(offset: u64) -> Option<Block> {
+	if offset % 512 != 0 {
+		// Add padding to make offset a multiple of 512 bytes
+		let padding = 512 - offset as u64 % 512;
+		if padding > 0 {
+			return Some(Block {
+				reader: Box::new(PaddingReader {
+					size: padding as usize
+				}),
+				offset: offset
+			});
+		}
+	}
+	None
+}
 
 // read from corresponding source dir to compute the blocks
 pub fn load_blocks(source_dir: impl AsRef<Path>, path: impl AsRef<Path>) -> io::Result<Vec<Block>> {
@@ -119,20 +122,27 @@ pub fn load_blocks(source_dir: impl AsRef<Path>, path: impl AsRef<Path>) -> io::
 	let mut offset = 0;
 	for e in utils::read_dir(path, 0, usize::MAX) {
 		let m = fs::metadata(e.path())?;
-		let mut h = tar::Header::new_gnu();
-		h.set_metadata(&m);
-		// Strip source_dir to avoid including the full path
-		h.set_path(e.path().strip_prefix(&source_dir).unwrap())?;
-		h.set_cksum();
+		// Strip source_dir to avoid including the full path (in UTF-8)
+		let path = e.path().strip_prefix(&source_dir).unwrap().to_string_lossy();
+		let header = PaxHeader::new(path.to_string().as_str(), &m)?;
 
-		// header block
-		blocks.push(Block {
-			reader: Box::new(HeaderReader { header: h }),
-			offset: offset
-		});
-		offset += 512;  // header size
+		// pax header blocks
+		for r in header.to_readers() {
+			let size = r.size();
+			blocks.push(Block {
+				reader: Box::new(r),
+				offset: offset
+			});
+			offset += size as u64;
 
-		// file content block (for directory or symlink, no content is added)
+			// need padding as pax uses valid ustar entries
+			if let Some(p) = create_padding(offset) {
+				offset += p.reader.size() as u64;
+				blocks.push(p);
+			}
+		}
+
+		// file content block (for directory or symlink, no content is added, size is 0 already)
 		if m.is_file() {
 			let size = m.size();
 			blocks.push(Block {
@@ -144,18 +154,10 @@ pub fn load_blocks(source_dir: impl AsRef<Path>, path: impl AsRef<Path>) -> io::
 			});
 			offset += size;
 
-			if size % 512 != 0 {
-				// Add padding to make offset a multiple of 512 bytes
-				let padding = 512 - size % 512;
-				if padding > 0 {
-					blocks.push(Block {
-						reader: Box::new(PaddingReader {
-							size: padding as usize
-						}),
-						offset: offset
-					});
-					offset += padding;
-				}
+			// In ustar, content blocks need to be a multiple of 512 bytes
+			if let Some(p) = create_padding(offset) {
+				offset += p.reader.size() as u64;
+				blocks.push(p);
 			}
 		}
 	}
