@@ -11,7 +11,7 @@ use fuser::{
 };
 use std::{
 	fs,
-	time::Duration, ffi::{OsString, OsStr, CString}, io,
+	time::{Duration, SystemTime}, ffi::{OsString, OsStr, CString}, io,
 	collections::HashMap,
 	path::{Path, PathBuf}, os::unix::prelude::OsStrExt
 };
@@ -63,6 +63,13 @@ impl SnapshotFS {
 			}
 		}
 	}
+
+	/// Garbage collection for inode map
+	pub fn garbage_collect(&mut self) {
+		let now = SystemTime::now();
+		// remove all oudated info
+		self.inode_map.retain(|_ino, info| !info.outdated(now, self.timeout));
+	}
 }
 
 
@@ -81,7 +88,7 @@ impl Filesystem for SnapshotFS {
 			match self.file_map.get(name_stem) {
 				Some(ino) => {
 					let info = self.inode_map.get_mut(ino).unwrap();
-					match info.update_info(&self.source_dir, &self.timeout) {
+					match info.update_info(&self.source_dir, self.timeout) {
 						Ok(_) => {
 							reply.entry(&self.timeout, &info.attr, 0);
 							return;
@@ -132,7 +139,7 @@ impl Filesystem for SnapshotFS {
 			}
 		} else {
 			if let Some(info) = self.inode_map.get_mut(&ino) {
-				match info.update_info(&self.source_dir, &self.timeout) {
+				match info.update_info(&self.source_dir, self.timeout) {
 					Ok(_) => {
 						reply.attr(&self.timeout, &info.attr);
 						return;
@@ -159,6 +166,9 @@ impl Filesystem for SnapshotFS {
 			return;
 		}
 		assert!(offset >= 0);
+
+		// garbage collect to remove old and non-existent info
+		self.garbage_collect();
 
 		// special entries
 		let mut entries = vec![
@@ -196,7 +206,7 @@ impl Filesystem for SnapshotFS {
 	fn open(&mut self, _req: &Request, ino: u64, _flags: i32, reply: fuser::ReplyOpen) {
 		match self.inode_map.get_mut(&ino) {
 			Some(info) => {
-				match info.update_info(&self.source_dir, &self.timeout) {
+				match info.update_info(&self.source_dir, self.timeout) {
 					Ok(_) => reply.opened(0, 0),
 					Err(err) => {
 						warn!("error opening file {:?}: {}", info.path, err);

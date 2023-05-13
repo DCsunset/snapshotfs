@@ -33,20 +33,22 @@ impl InodeInfo {
 		})
 	}
 
-	pub fn update_info(&mut self, source_dir: impl AsRef<Path>, timeout: &Duration) -> io::Result<()> {
-		let outdated = match self.timestamp.elapsed() {
+	pub fn outdated(&self, now: SystemTime, timeout: Duration) -> bool {
+		match now.duration_since(self.timestamp) {
 			Ok(elapsed)	=> {
 				// update if outdated
-				elapsed > *timeout
+				elapsed > timeout
 			},
 			Err(err) => {
 				warn!("System time error: {err}");
-				// Always update when SystemTime is not available
+				// Always outdated since timestamp should be before now
 				true 
 			}
-		};
+		}
+	}
 
-		if outdated {
+	pub fn update_info(&mut self, source_dir: impl AsRef<Path>, timeout: Duration) -> io::Result<()> {
+		if self.outdated(SystemTime::now(), timeout) {
 			let (blocks, attr) = InodeInfo::get_metadata(source_dir, &self.path)?;
 			self.attr = attr;
 			self.blocks = blocks;
