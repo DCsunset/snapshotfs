@@ -81,7 +81,7 @@ impl Filesystem for SnapshotFS {
 			match self.file_map.get(name_stem) {
 				Some(ino) => {
 					let info = self.inode_map.get_mut(ino).unwrap();
-					match info.update_info(&self.source_dir) {
+					match info.update_info(&self.source_dir, &self.timeout) {
 						Ok(_) => {
 							reply.entry(&self.timeout, &info.attr, 0);
 							return;
@@ -132,7 +132,7 @@ impl Filesystem for SnapshotFS {
 			}
 		} else {
 			if let Some(info) = self.inode_map.get_mut(&ino) {
-				match info.update_info(&self.source_dir) {
+				match info.update_info(&self.source_dir, &self.timeout) {
 					Ok(_) => {
 						reply.attr(&self.timeout, &info.attr);
 						return;
@@ -196,7 +196,7 @@ impl Filesystem for SnapshotFS {
 	fn open(&mut self, _req: &Request, ino: u64, _flags: i32, reply: fuser::ReplyOpen) {
 		match self.inode_map.get_mut(&ino) {
 			Some(info) => {
-				match info.update_info(&self.source_dir) {
+				match info.update_info(&self.source_dir, &self.timeout) {
 					Ok(_) => reply.opened(0, 0),
 					Err(err) => {
 						warn!("error opening file {:?}: {}", info.path, err);

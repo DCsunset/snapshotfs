@@ -3,10 +3,11 @@
  * See full notice in README.md in this project
  */
 
-use std::{ffi::OsString, time::SystemTime, fs, os::unix::prelude::MetadataExt, path::Path, io};
+use std::{ffi::OsString, time::{SystemTime, Duration}, fs, os::unix::prelude::MetadataExt, path::Path, io};
 
 use fuser::{FileAttr, FileType};
 use libc::{S_IXUSR, S_IXGRP, S_IXOTH, S_IFMT};
+use log::warn;
 use crate::block_io::{Block, load_blocks, size_of_blocks};
 
 // InodeInfo corresponds to top level dirs
@@ -16,7 +17,9 @@ pub struct InodeInfo {
 	/// Blocks for reading and fast seeking in tar file
 	/// Each file has a header block and a content block
 	pub blocks: Vec<Block>,
-	pub attr: FileAttr
+	pub attr: FileAttr,
+	/// Last update timestamp
+	timestamp: SystemTime
 }
 
 impl InodeInfo {
@@ -25,14 +28,30 @@ impl InodeInfo {
 		Ok(Self {
 			path: path,
 			blocks: blocks,
-			attr: attr
+			attr: attr,
+			timestamp: SystemTime::now()
 		})
 	}
 
-	pub fn update_info(&mut self, source_dir: impl AsRef<Path>) -> io::Result<()> {
-		let (blocks, attr) = InodeInfo::get_metadata(source_dir, &self.path)?;
-		self.attr = attr;
-		self.blocks = blocks;
+	pub fn update_info(&mut self, source_dir: impl AsRef<Path>, timeout: &Duration) -> io::Result<()> {
+		let outdated = match self.timestamp.elapsed() {
+			Ok(elapsed)	=> {
+				// update if outdated
+				elapsed > *timeout
+			},
+			Err(err) => {
+				warn!("System time error: {err}");
+				// Always update when SystemTime is not available
+				true 
+			}
+		};
+
+		if outdated {
+			let (blocks, attr) = InodeInfo::get_metadata(source_dir, &self.path)?;
+			self.attr = attr;
+			self.blocks = blocks;
+			self.timestamp = SystemTime::now();
+		}
 		Ok(())
 	}
 
