@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.3.0](https://github.com/DCsunset/snapshot-fuse/compare/v0.2.0...v0.3.0) (2023-05-13)
+
+
+### Features
+
+* add garbage collection ([b927484](https://github.com/DCsunset/snapshot-fuse/commit/b92748492340b851d4fc360ecfbae044d78c0ce0))
+* supoprt setting timeout for metadata ([d55fd03](https://github.com/DCsunset/snapshot-fuse/commit/d55fd03278ab8598ae446d41f45fcf9e30c00c8d))
+* update inode info only when outdated ([36820df](https://github.com/DCsunset/snapshot-fuse/commit/36820dfda2402e2871e3163c7d990e74d27d0fe3))
+
 ## [0.2.0](https://github.com/DCsunset/snapshot-fuse/compare/v0.1.1...v0.2.0) (2023-05-04)
 
 
