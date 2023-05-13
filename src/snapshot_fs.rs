@@ -20,13 +20,11 @@ use libc::{EIO, ENOENT};
 use crate::{metadata::{InodeInfo, derive_attr, ROOT_INODE}, block_io::read_from_blocks};
 use crate::utils;
 
-// TTL for fuse reply
-// TODO: add an option to change it
-const TTL: Duration = Duration::from_secs(1);
-
 pub struct SnapshotFS {
 	/// Source dir
 	source_dir: PathBuf,
+	/// Timeout for cache in fuse reply (attr, entry)
+	timeout: Duration,
 	/// map inode to actually filename
 	// TODO: garbage collect too old items
 	inode_map: HashMap<u64, InodeInfo>,
@@ -35,9 +33,10 @@ pub struct SnapshotFS {
 }
 
 impl SnapshotFS {
-	pub fn new(source_dir: PathBuf) -> Self {
+	pub fn new(source_dir: PathBuf, timeout_secs: u64) -> Self {
 		Self {
 			source_dir: source_dir,
+			timeout: Duration::from_secs(timeout_secs),
 			inode_map: HashMap::new(),
 			file_map: HashMap::new()
 		}
@@ -84,7 +83,7 @@ impl Filesystem for SnapshotFS {
 					let info = self.inode_map.get_mut(ino).unwrap();
 					match info.update_info(&self.source_dir) {
 						Ok(_) => {
-							reply.entry(&TTL, &info.attr, 0);
+							reply.entry(&self.timeout, &info.attr, 0);
 							return;
 						}
 						Err(err) => {
@@ -99,9 +98,11 @@ impl Filesystem for SnapshotFS {
 				},
 				None => {
 					if utils::read_dir(&self.source_dir, 1, 1).find(|e| e.file_name() == name_stem).is_some() {
+						// FIXME: self.timeout should be partially borrowed here when Rust supports it
+						let timeout = self.timeout.clone();
 						match self.add_file(name_stem) {
 							Ok(info) => {
-								reply.entry(&TTL, &info.attr, 0);
+								reply.entry(&timeout, &info.attr, 0);
 								return;		
 							},
 							Err(err) => {
@@ -122,7 +123,7 @@ impl Filesystem for SnapshotFS {
 		if ino == ROOT_INODE {
 			match fs::metadata(&self.source_dir) {
 				Ok(metadata) => {
-					reply.attr(&TTL, &derive_attr(&metadata, true));
+					reply.attr(&self.timeout, &derive_attr(&metadata, true));
 				},
 				Err(e) => {
 					error!("error reading source dir: {e}");
@@ -133,7 +134,7 @@ impl Filesystem for SnapshotFS {
 			if let Some(info) = self.inode_map.get_mut(&ino) {
 				match info.update_info(&self.source_dir) {
 					Ok(_) => {
-						reply.attr(&TTL, &info.attr);
+						reply.attr(&self.timeout, &info.attr);
 						return;
 					},
 					Err(err) => {

@@ -31,6 +31,10 @@ struct Args {
 	#[arg(long)]
 	allow_root: bool,
 
+	/// Timeout for metadata and cache in seconds
+	#[arg(short, long, default_value_t = 1)]
+	timeout: u64,
+
 	/// Unmount automatically when program exists.
 	/// (need --allow-root or --allow-other; auto set one if not specified)
 	#[arg(short, long)]
@@ -59,7 +63,7 @@ fn main() {
 
 	// TODO: support background mount
 	fuser::mount2(
-		SnapshotFS::new(source_dir),
+		SnapshotFS::new(source_dir, args.timeout),
 		args.mount_point,
 		&options
 	).unwrap();
