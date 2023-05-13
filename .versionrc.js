@@ -1,4 +1,4 @@
-const re = /^version = "(\d\.\d\.\d)"$/m;
+const re = /name = "snapshotfs"\nversion = "(\d\.\d\.\d)"/;
 
 function readVersion(contents) {
 	const matches = contents.match(re);
@@ -6,20 +6,25 @@ function readVersion(contents) {
 }
 
 function writeVersion(contents, version) {
-	return contents.replace(re, `version = "${version}"`);
+	return contents.replace(re, `name = "snapshotfs"\nversion = "${version}"`);
 }
 
-const tracker = {
-	filename: "Cargo.toml",
-	updater: {
-		readVersion,
-		writeVersion
+const updater = { readVersion, writeVersion };
+
+const trackers = [
+	{
+		filename: "Cargo.toml",
+		updater
+	},
+	{
+		filename: "Cargo.lock",
+		updater
 	}
-};
+];
 
 module.exports = {
 	// read version
-	packageFiles: [tracker],
+	packageFiles: trackers,
 	// write version
-	bumpFiles: [tracker]
+	bumpFiles: trackers
 };
