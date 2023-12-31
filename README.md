@@ -31,8 +31,9 @@ The mount point will be a read-only filesystem providing a snapshot view of all 
 Users should make sure the source directory doesn't change when reading the archives in snapshotfs.
 Otherwise, the archives might be corrupted.
 
-Note that the program will run in the foreground.
-Add `&` to the end to make it run in the background.
+Note that the program will run in the background by default.
+Use flag `--foreground` to run it in the foreground.
+
 
 The filesystem should be unmounted by command `fusermount -u <MOUNT_POINT`,
 even if the program already exits.
