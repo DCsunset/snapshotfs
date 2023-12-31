@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.0](https://github.com/DCsunset/snapshot-fuse/compare/v0.3.0...v0.4.0) (2023-12-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* support mounting in background by default
+
+### Features
+
+* support mounting in background by default ([de1ac7b](https://github.com/DCsunset/snapshot-fuse/commit/de1ac7be5e8a71520c5f700e27d38159f7442e00))
+
 ## [0.3.0](https://github.com/DCsunset/snapshot-fuse/compare/v0.2.0...v0.3.0) (2023-05-13)
 
 
