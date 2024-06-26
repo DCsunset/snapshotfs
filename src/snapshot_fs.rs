@@ -26,7 +26,7 @@ pub struct SnapshotFS {
 	/// Timeout for cache in fuse reply (attr, entry)
 	timeout: Duration,
 	/// map inode to actually filename
-	// TODO: garbage collect too old items
+	// TODO: garbage collect non-existent items
 	inode_map: HashMap<u64, InodeInfo>,
 	// Map file name to inode
 	file_map: HashMap<OsString, u64>
@@ -62,13 +62,6 @@ impl SnapshotFS {
 				}
 			}
 		}
-	}
-
-	/// Garbage collection for inode map
-	pub fn garbage_collect(&mut self) {
-		let now = SystemTime::now();
-		// remove all oudated info
-		self.inode_map.retain(|_ino, info| !info.outdated(now, self.timeout));
 	}
 }
 
@@ -166,9 +159,6 @@ impl Filesystem for SnapshotFS {
 			return;
 		}
 		assert!(offset >= 0);
-
-		// garbage collect to remove old and non-existent info
-		self.garbage_collect();
 
 		let entries = utils::read_dir(self.source_dir.clone(), 1, 1).filter_map(|e| {
 			let mut name = e.file_name().to_os_string();
