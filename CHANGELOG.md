@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.2](https://github.com/DCsunset/snapshot-fuse/compare/v0.4.1...v0.4.2) (2024-06-26)
+
+
+### Bug Fixes
+
+* update inode info when it expires ([8bb4bfb](https://github.com/DCsunset/snapshot-fuse/commit/8bb4bfb01e53452f743135590f61908bc9ca136b))
+
 ## [0.4.1](https://github.com/DCsunset/snapshot-fuse/compare/v0.4.0...v0.4.1) (2024-06-26)
 
 
