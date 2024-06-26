@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.1](https://github.com/DCsunset/snapshot-fuse/compare/v0.4.0...v0.4.1) (2024-06-26)
+
+
+### Bug Fixes
+
+* fix access to invalid ino because of wrong garbage collection ([0475201](https://github.com/DCsunset/snapshot-fuse/commit/047520146a6b2c3e13dc8a6ba881ec2f548a641b))
+* remove unnecessary dir entries ([bc9cf8a](https://github.com/DCsunset/snapshot-fuse/commit/bc9cf8ab1aa938dff6071abe0b9361c1f591a7cb))
+
 ## [0.4.0](https://github.com/DCsunset/snapshot-fuse/compare/v0.3.0...v0.4.0) (2023-12-31)
 
 

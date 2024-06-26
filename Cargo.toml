@@ -1,6 +1,6 @@
 [package]
 name = "snapshotfs"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 authors = ["DCsunset"]
 description = "A fuse-based read-only filesystem to provide a snapshot view (tar archives) of directories or files without actually creating the archives"
