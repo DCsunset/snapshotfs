@@ -35,7 +35,7 @@ pub struct SnapshotFS {
 impl SnapshotFS {
 	pub fn new(source_dir: PathBuf, timeout_secs: u64) -> Self {
 		Self {
-			source_dir: source_dir,
+			source_dir,
 			timeout: Duration::from_secs(timeout_secs),
 			inode_map: HashMap::new(),
 			file_map: HashMap::new()
@@ -170,12 +170,7 @@ impl Filesystem for SnapshotFS {
 		// garbage collect to remove old and non-existent info
 		self.garbage_collect();
 
-		// special entries
-		let mut entries = vec![
-			(ROOT_INODE, FileType::Directory, OsString::from(".")),
-			(ROOT_INODE, FileType::Directory, OsString::from("..")),
-		];
-		entries.extend(utils::read_dir(&self.source_dir.clone(), 1, 1).filter_map(|e| {
+		let entries = utils::read_dir(self.source_dir.clone(), 1, 1).filter_map(|e| {
 			let mut name = e.file_name().to_os_string();
 			name.push(".tar");  // append tar extension
 			
@@ -190,9 +185,9 @@ impl Filesystem for SnapshotFS {
 				},
 				Err(_) => None
 			}
-		}));
+		});
 
-		for (i, e) in entries.into_iter().enumerate().skip(offset as usize) {
+		for (i, e) in entries.enumerate().skip(offset as usize) {
 			// offset is used by kernel for future readdir calls (should be next entry)
 			if reply.add(e.0, (i+1) as i64, e.1, e.2) {
 				// return true when buffer full
