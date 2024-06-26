@@ -44,24 +44,27 @@ impl SnapshotFS {
 
 	// Add file to file_map and inode_map if it doesn't exist
 	pub fn add_file(&mut self, name: &OsStr) -> io::Result<&InodeInfo> {
-		match self.file_map.get(name) {
-			Some(ino) => Ok(self.inode_map.get(ino).unwrap()),
-			None => {
-				let path = Path::new(&self.source_dir).join(name).as_os_str().to_os_string();
-				match InodeInfo::new(&self.source_dir, path) {
-					Ok(info) => {
-						let ino = info.attr.ino;
-						self.file_map.insert(name.to_os_string(), ino);
-						self.inode_map.insert(ino, info);
-						Ok(self.inode_map.get(&ino).unwrap())
-					}
-					Err(err) => {
-						warn!("error create inode info: {}", err);
-						Err(err)
-					}
-				}
-			}
-		}
+    if let Some(ino) = self.file_map.get(name) {
+      let info = self.inode_map.get(ino).unwrap();
+      if !info.outdated(SystemTime::now(), self.timeout) {
+        // Can't return Ok(info) because of limitation of current Rust borrow checker
+        return Ok(self.inode_map.get(ino).unwrap());
+      }
+    }
+
+    let path = Path::new(&self.source_dir).join(name).as_os_str().to_os_string();
+    match InodeInfo::new(&self.source_dir, path) {
+      Ok(info) => {
+        let ino = info.attr.ino;
+        self.file_map.insert(name.to_os_string(), ino);
+        self.inode_map.insert(ino, info);
+        Ok(self.inode_map.get(&ino).unwrap())
+      }
+      Err(err) => {
+        warn!("error create inode info: {}", err);
+        Err(err)
+      }
+    }
 	}
 }
 
